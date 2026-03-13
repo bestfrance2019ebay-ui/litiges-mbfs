@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionnaire Litiges — My Best French Shop</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+  .header{background:#1F3864;color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+  .header h1{font-size:18px;font-weight:600;flex:1}
+  .header span{font-size:12px;opacity:.7}
+  .container{max-width:1400px;margin:0 auto;padding:1.5rem}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+  .stat{background:#fff;border-radius:8px;padding:14px 16px;border:1px solid #e0e0e0}
+  .stat-label{font-size:12px;color:#666;margin-bottom:4px}
+  .stat-val{font-size:26px;font-weight:600}
+  .s-total{color:#1F3864}
+  .s-ok-v{color:#2e7d32}
+  .s-transit-v{color:#1565c0}
+  .s-wait-v{color:#e65100}
+  .toolbar{background:#fff;border-radius:8px;padding:1rem;margin-bottom:1rem;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border:1px solid #e0e0e0}
+  .toolbar input,.toolbar select{font-size:13px;padding:7px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#1a1a1a}
+  .toolbar input{flex:1;min-width:180px}
+  .btn{font-size:13px;padding:7px 14px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#1a1a1a;cursor:pointer;white-space:nowrap;font-weight:500}
+  .btn:hover{background:#f0f0f0}
+  .btn-add{background:#1565c0;border-color:#1565c0;color:#fff}
+  .btn-add:hover{background:#0d47a1}
+  .btn-export{background:#2e7d32;border-color:#2e7d32;color:#fff}
+  .btn-export:hover{background:#1b5e20}
+  .table-wrap{background:#fff;border-radius:8px;border:1px solid #e0e0e0;overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{font-size:11px;font-weight:600;color:#555;text-align:left;padding:10px 12px;border-bottom:1px solid #e0e0e0;background:#f8f8f8;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+  td{padding:10px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f5f8ff}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+  .b-ok{background:#e8f5e9;color:#2e7d32}
+  .b-transit{background:#e3f2fd;color:#1565c0}
+  .b-wait{background:#fff3e0;color:#e65100}
+  .b-prep{background:#fce4ec;color:#c62828}
+  .link-a{font-size:12px;padding:3px 9px;border-radius:4px;border:1px solid #1565c0;color:#1565c0;text-decoration:none;display:inline-block}
+  .link-a:hover{background:#e3f2fd}
+  .act-btn{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #ccc;background:#fff;cursor:pointer;margin-right:4px}
+  .act-btn:hover{background:#f0f0f0}
+  .del-btn{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #ffcdd2;background:#fff;color:#c62828;cursor:pointer}
+  .del-btn:hover{background:#ffebee}
+  .note{font-size:10px;color:#888;display:block;margin-top:2px}
+  .tracking{font-family:monospace;font-size:11px;color:#333}
+  .empty{text-align:center;padding:3rem;color:#999;font-size:14px}
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:10px;padding:1.5rem;width:min(520px,95vw);max-height:92vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+  .modal h3{font-size:16px;font-weight:600;margin-bottom:1.25rem;color:#1F3864;border-bottom:1px solid #e0e0e0;padding-bottom:.75rem}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+  .field input,.field select,.field textarea{width:100%;font-size:13px;padding:8px 10px;border-radius:6px;border:1px solid #ccc;color:#1a1a1a}
+  .field textarea{resize:vertical;min-height:55px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid #1565c0;border-color:#1565c0}
+  .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;border-top:1px solid #e0e0e0;padding-top:1rem}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tag-conf{font-size:10px;background:#fff3e0;color:#e65100;border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600}
+  @media(max-width:700px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .row2{grid-template-columns:1fr}
+    th:nth-child(3),td:nth-child(3),th:nth-child(8),td:nth-child(8){display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📦 Gestionnaire Litiges — My Best French Shop</h1>
+  <span id="last-update"></span>
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total dossiers</div><div class="stat-val s-total" id="s-total">0</div></div>
+    <div class="stat"><div class="stat-label">✅ Livrés</div><div class="stat-val s-ok-v" id="s-ok">0</div></div>
+    <div class="stat"><div class="stat-label">✈️ En transit</div><div class="stat-val s-transit-v" id="s-transit">0</div></div>
+    <div class="stat"><div class="stat-label">⏳ En attente</div><div class="stat-val s-wait-v" id="s-wait">0</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="🔍  Rechercher client, numéro de suivi..." oninput="render()">
+    <select id="fStatus" onchange="render()">
+      <option value="">Tous les statuts</option>
+      <option value="Livré">Livré</option>
+      <option value="En transit">En transit</option>
+      <option value="En instance">En instance</option>
+      <option value="En préparation">En préparation</option>
+      <option value="Réexpédié">Réexpédié</option>
+    </select>
+    <select id="fPays" onchange="render()">
+      <option value="">Tous les pays</option>
+    </select>
+    <button class="btn" onclick="resetFilters()">Réinitialiser</button>
+    <button class="btn btn-add" onclick="openModal()">+ Nouveau dossier</button>
+    <button class="btn btn-export" onclick="exportCSV()">⬇ Exporter CSV</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Pays</th>
+          <th>N° Suivi</th>
+          <th>Transporteur</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th>Suivi</th>
+          <th>Téléphone</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none">Aucun dossier trouvé pour ces filtres.</div>
+  </div>
+
+  <div style="margin-top:.75rem;font-size:11px;color:#999;text-align:right">
+    Données sauvegardées localement dans votre navigateur. <a href="#" onclick="exportCSV();return false" style="color:#1565c0">Exporter une sauvegarde CSV</a>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+<div class="modal">
+  <h3 id="modal-title">Nouveau dossier</h3>
+  <div class="row2">
+    <div class="field"><label>Client *</label><input id="f-client" placeholder="Nom Prénom"></div>
+    <div class="field"><label>Téléphone</label><input id="f-tel" placeholder="+33 / 00..."></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>Pays *</label><input id="f-pays" placeholder="France, Allemagne..."></div>
+    <div class="field"><label>Date (dernier scan)</label><input id="f-date" type="date"></div>
+  </div>
+  <div class="field"><label>Adresse</label><textarea id="f-adresse" rows="2" placeholder="Rue, ville, code postal"></textarea></div>
+  <div class="row2">
+    <div class="field"><label>N° Suivi *</label><input id="f-tracking" placeholder="LL019...FR / AQUAA...YQ"></div>
+    <div class="field"><label>Transporteur</label><input id="f-trans" placeholder="La Poste, Aquiline..."></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>Statut</label>
+      <select id="f-statut">
+        <option>Livré</option>
+        <option>En transit</option>
+        <option>En instance</option>
+        <option>En préparation</option>
+        <option>Réexpédié</option>
+      </select>
+    </div>
+    <div class="field"><label>Confidentiel (Amazon)</label>
+      <select id="f-conf">
+        <option value="0">Non</option>
+        <option value="1">Oui — ne pas divulguer</option>
+      </select>
+    </div>
+  </div>
+  <div class="field"><label>Lien de suivi (URL)</label><input id="f-url" placeholder="https://www.ship24.com/... ou https://aquiline-tracking.com/..."></div>
+  <div class="field"><label>Notes internes</label><textarea id="f-notes" rows="2" placeholder="Ex: Remis voisin, anomalie adresse..."></textarea></div>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-add" onclick="saveDossier()">Enregistrer</button>
+  </div>
+</div>
+</div>
+
+<script>
+const INIT = [
+  {id:1,client:"Luis Pinto",pays:"Brésil",adresse:"Rua Maestro Deozilio 399, Rio de Janeiro RJ 23027420",tracking:"EY958032236FR",trans:"La Poste / Colissimo",statut:"Livré",date:"2026-03-12",url:"https://www.ship24.com/fr/tracking?p=EY958032236FR",tel:"21965967829",conf:0,notes:""},
+  {id:2,client:"Giordano Baravalle",pays:"USA",adresse:"284 Thomas S Boyland St, Apt 3, Brooklyn NY 11233",tracking:"EY958032236FR",trans:"La Poste / Colissimo",statut:"Livré",date:"2026-03-12",url:"https://www.ship24.com/fr/tracking?p=EY958032236FR",tel:"3473411732",conf:0,notes:""},
+  {id:3,client:"Haim Yeger",pays:"Israël",adresse:"34 Ahraz St 725, Ramat Yishay 3009500",tracking:"LL019558255FR",trans:"La Poste / Delivengo",statut:"En transit",date:"2026-03-11",url:"https://www.ship24.com/fr/tracking?p=LL019558255FR",tel:"972532311262",conf:0,notes:"Douanes terminées IL"},
+  {id:4,client:"Robert Popovic",pays:"Croatie",adresse:"Kaje Adzic 8, Slavonski Brod 35000",tracking:"LL019683522FR",trans:"La Poste / Delivengo",statut:"Livré",date:"2026-03-11",url:"https://www.ship24.com/fr/tracking?p=LL019683522FR",tel:"385981671758",conf:0,notes:""},
+  {id:5,client:"Rudis Millers",pays:"Lettonie",adresse:"Rozu iela 5, Kuldiga 3301",tracking:"LL019727625FR",trans:"La Poste / Latvijas Pasts",statut:"En instance",date:"2026-03-13",url:"https://www.ship24.com/fr/tracking?p=LL019727625FR",tel:"29627772",conf:0,notes:"Point de retrait Kuldīga"},
+  {id:6,client:"Federico Vicario",pays:"Italie",adresse:"Via Osoppo 22, Leonacco di Tricesimo UD 33019",tracking:"AQUAA4100560326YQ",trans:"Aquiline (Amazon)",statut:"Livré",date:"2026-02-11",url:"https://aquiline-tracking.com/app/track/AQUAA4100560326YQ",tel:"3332514419",conf:1,notes:""},
+  {id:7,client:"Gunda Wessel",pays:"Allemagne",adresse:"Parkstraße 23, Ostseebad Wustrow 18347",tracking:"AQUAA7144760326YQ",trans:"Aquiline (Amazon)",statut:"Livré",date:"2026-03-10",url:"https://aquiline-tracking.com/app/track/AQUAA7144760326YQ",tel:"1782834369",conf:1,notes:""},
+  {id:8,client:"Tahir Erdogan",pays:"Allemagne",adresse:"Rolandstr. 39a, Herne 44651",tracking:"AQUAA5014250326YQ",trans:"Aquiline (Amazon)",statut:"Livré",date:"2026-03-10",url:"https://aquiline-tracking.com/app/track/AQUAA5014250326YQ",tel:"023256482282",conf:1,notes:"Remis voisin (interne)"},
+  {id:9,client:"Patrick André",pays:"France",adresse:"3 Rue du Bargeouri, Les Sables d'Olonne 85100",tracking:"AQUAA2946530326YQ",trans:"Aquiline (Amazon)",statut:"Livré",date:"2026-03-10",url:"https://aquiline-tracking.com/app/track/AQUAA2946530326YQ",tel:"0660256541",conf:1,notes:"Scan Vanves (hub logistique)"},
+  {id:10,client:"Serge Henry",pays:"France",adresse:"9 Rue de Plantecoude, Anglet 64600",tracking:"AQUAA2336010326YQ",trans:"Aquiline (Amazon)",statut:"Livré",date:"2026-03-12",url:"https://aquiline-tracking.com/app/track/AQUAA2336010326YQ",tel:"0687293604",conf:1,notes:""},
+  {id:11,client:"Rico Näther",pays:"Allemagne",adresse:"Waldstraße 4, Augustusburg 09573",tracking:"— (Ordered)",trans:"Amazon (confidentiel)",statut:"Réexpédié",date:"2026-03-12",url:"",tel:"015118419932",conf:1,notes:"Livraison précédente perdue"},
+  {id:12,client:"Christine Frey",pays:"Allemagne",adresse:"Zillenhardtstr. 51, Nubius Group GmbH, Göppingen 73037",tracking:"DE5297746394",trans:"Amazon (confidentiel)",statut:"En préparation",date:"2026-03-12",url:"",tel:"1605309636",conf:1,notes:"Dispatched — livraison vendredi 13/03"},
+  {id:13,client:"Martin Kähler",pays:"Allemagne",adresse:"Weidkamp 20c, Barmstedt 25355",tracking:"— (Ordered)",trans:"Amazon (confidentiel)",statut:"Réexpédié",date:"2026-03-12",url:"",tel:"015118419932",conf:1,notes:"Livraison précédente perdue"},
+  {id:14,client:"Dvir Shani",pays:"Israël",adresse:"Barak 32, Kiryat Motzkin 2631540",tracking:"LL019122920FR",trans:"La Poste / Delivengo",statut:"Livré",date:"2025-12-19",url:"https://www.ship24.com/fr/tracking?p=LL019122920FR",tel:"0525737774",conf:0,notes:""},
+];
+
+let data = JSON.parse(localStorage.getItem('mbfs_litiges_v2') || 'null') || INIT;
+let editId = null;
+
+function save(){
+  localStorage.setItem('mbfs_litiges_v2', JSON.stringify(data));
+  document.getElementById('last-update').textContent = 'Dernière sauvegarde : ' + new Date().toLocaleTimeString('fr-FR');
+}
+
+function statusClass(s){
+  if(s==='Livré') return 'b-ok';
+  if(s==='En transit') return 'b-transit';
+  if(s==='En instance') return 'b-wait';
+  return 'b-prep';
+}
+
+function fmtDate(d){
+  if(!d) return '—';
+  const p = d.split('-');
+  return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : d;
+}
+
+function render(){
+  const q = document.getElementById('search').value.toLowerCase();
+  const fS = document.getElementById('fStatus').value;
+  const fP = document.getElementById('fPays').value;
+
+  let filtered = data.filter(d => {
+    const txt = (d.client+d.tracking+d.pays+d.trans+d.notes+d.adresse).toLowerCase();
+    return (!q || txt.includes(q)) && (!fS || d.statut===fS) && (!fP || d.pays===fP);
+  }).sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
+
+  const pays = [...new Set(data.map(d=>d.pays))].sort();
+  const sel = document.getElementById('fPays');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tous les pays</option>' + pays.map(p=>`<option${p===cur?' selected':''}>${p}</option>`).join('');
+
+  document.getElementById('s-total').textContent = data.length;
+  document.getElementById('s-ok').textContent = data.filter(d=>d.statut==='Livré').length;
+  document.getElementById('s-transit').textContent = data.filter(d=>d.statut==='En transit').length;
+  document.getElementById('s-wait').textContent = data.filter(d=>['En instance','En préparation','Réexpédié'].includes(d.statut)).length;
+
+  const tbody = document.getElementById('tbody');
+  document.getElementById('empty').style.display = filtered.length ? 'none' : 'block';
+
+  tbody.innerHTML = filtered.map(d=>`
+    <tr>
+      <td>
+        <strong>${d.client}</strong>
+        ${d.conf ? '<span class="tag-conf">CONF.</span>' : ''}
+        ${d.notes ? `<span class="note">${d.notes}</span>` : ''}
+      </td>
+      <td>${d.pays}</td>
+      <td class="tracking">${d.tracking}</td>
+      <td>${d.trans}</td>
+      <td><span class="badge ${statusClass(d.statut)}">${d.statut}</span></td>
+      <td style="white-space:nowrap">${fmtDate(d.date)}</td>
+      <td>${d.url ? `<a class="link-a" href="${d.url}" target="_blank">Suivre ↗</a>` : '<span style="color:#bbb;font-size:11px">—</span>'}</td>
+      <td style="font-size:12px;color:#555">${d.tel||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="act-btn" onclick="editDossier(${d.id})">Modifier</button>
+        <button class="del-btn" onclick="deleteDossier(${d.id})">Suppr.</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openModal(reset=true){
+  if(reset){
+    editId=null;
+    document.getElementById('modal-title').textContent='Nouveau dossier';
+    ['client','pays','adresse','tracking','trans','url','tel','notes'].forEach(f=>document.getElementById('f-'+f).value='');
+    document.getElementById('f-statut').value='Livré';
+    document.getElementById('f-conf').value='0';
+    document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+function editDossier(id){
+  const d = data.find(x=>x.id===id);
+  if(!d) return;
+  editId=id;
+  document.getElementById('modal-title').textContent='Modifier le dossier';
+  document.getElementById('f-client').value=d.client;
+  document.getElementById('f-pays').value=d.pays;
+  document.getElementById('f-adresse').value=d.adresse;
+  document.getElementById('f-tracking').value=d.tracking;
+  document.getElementById('f-trans').value=d.trans;
+  document.getElementById('f-statut').value=d.statut;
+  document.getElementById('f-date').value=d.date;
+  document.getElementById('f-url').value=d.url;
+  document.getElementById('f-tel').value=d.tel;
+  document.getElementById('f-conf').value=d.conf?'1':'0';
+  document.getElementById('f-notes').value=d.notes;
+  openModal(false);
+}
+
+function saveDossier(){
+  const client = document.getElementById('f-client').value.trim();
+  const tracking = document.getElementById('f-tracking').value.trim();
+  if(!client||!tracking){alert('Le nom du client et le numéro de suivi sont obligatoires.');return;}
+  const obj = {
+    id: editId || (Math.max(0,...data.map(d=>d.id))+1),
+    client,
+    pays:document.getElementById('f-pays').value.trim(),
+    adresse:document.getElementById('f-adresse').value.trim(),
+    tracking,
+    trans:document.getElementById('f-trans').value.trim(),
+    statut:document.getElementById('f-statut').value,
+    date:document.getElementById('f-date').value,
+    url:document.getElementById('f-url').value.trim(),
+    tel:document.getElementById('f-tel').value.trim(),
+    conf:parseInt(document.getElementById('f-conf').value),
+    notes:document.getElementById('f-notes').value.trim()
+  };
+  if(editId) data=data.map(d=>d.id===editId?obj:d);
+  else data.push(obj);
+  save(); closeModal(); render();
+}
+
+function deleteDossier(id){
+  if(!confirm('Supprimer définitivement ce dossier ?')) return;
+  data=data.filter(d=>d.id!==id);
+  save(); render();
+}
+
+function resetFilters(){
+  document.getElementById('search').value='';
+  document.getElementById('fStatus').value='';
+  document.getElementById('fPays').value='';
+  render();
+}
+
+function exportCSV(){
+  const h=['Client','Pays','Adresse','N° Suivi','Transporteur','Statut','Date','URL Suivi','Téléphone','Confidentiel','Notes'];
+  const rows=data.map(d=>[d.client,d.pays,d.adresse,d.tracking,d.trans,d.statut,fmtDate(d.date),d.url,d.tel,d.conf?'Oui':'Non',d.notes].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv=[h.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='litiges_mbfs_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()});
+document.getElementById('last-update').textContent = 'Données chargées le ' + new Date().toLocaleDateString('fr-FR');
+render();
+</script>
+</body>
+</html>
